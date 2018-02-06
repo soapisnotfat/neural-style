@@ -12,30 +12,30 @@ class VGG16(nn.Module):
     def __init__(self, requires_grad=False):
         super(VGG16, self).__init__()
         vgg_pretrained_features = models.vgg16(pretrained=True).features
-        self.slice1 = nn.Sequential()
-        self.slice2 = nn.Sequential()
-        self.slice3 = nn.Sequential()
-        self.slice4 = nn.Sequential()
+        self.sequential_1 = nn.Sequential()
+        self.sequential_2 = nn.Sequential()
+        self.sequential_3 = nn.Sequential()
+        self.sequential_4 = nn.Sequential()
         for x in range(4):
-            self.slice1.add_module(str(x), vgg_pretrained_features[x])
+            self.sequential_1.add_module(str(x), vgg_pretrained_features[x])
         for x in range(4, 9):
-            self.slice2.add_module(str(x), vgg_pretrained_features[x])
+            self.sequential_2.add_module(str(x), vgg_pretrained_features[x])
         for x in range(9, 16):
-            self.slice3.add_module(str(x), vgg_pretrained_features[x])
+            self.sequential_3.add_module(str(x), vgg_pretrained_features[x])
         for x in range(16, 23):
-            self.slice4.add_module(str(x), vgg_pretrained_features[x])
+            self.sequential_4.add_module(str(x), vgg_pretrained_features[x])
         if not requires_grad:
             for param in self.parameters():
                 param.requires_grad = False
 
     def forward(self, x):
-        h = self.slice1(x)
+        h = self.sequential_1(x)
         h_relu_1_2 = h
-        h = self.slice2(h)
+        h = self.sequential_2(h)
         h_relu_2_2 = h
-        h = self.slice3(h)
+        h = self.sequential_3(h)
         h_relu_3_3 = h
-        h = self.slice4(h)
+        h = self.sequential_4(h)
         h_relu_4_3 = h
         vgg_outputs = namedtuple("VggOutputs", ['relu1_2', 'relu2_2', 'relu3_3', 'relu4_3'])
         out = vgg_outputs(h_relu_1_2, h_relu_2_2, h_relu_3_3, h_relu_4_3)
@@ -47,39 +47,42 @@ class TransformerNet(nn.Module):
         super(TransformerNet, self).__init__()
         # Initial convolution layers
         self.conv1 = ConvLayer(3, 32, kernel_size=9, stride=1)
-        self.in1 = nn.InstanceNorm2d(32, affine=True)
+        self.instance1 = nn.InstanceNorm2d(32, affine=True)
         self.conv2 = ConvLayer(32, 64, kernel_size=3, stride=2)
-        self.in2 = nn.InstanceNorm2d(64, affine=True)
+        self.instance2 = nn.InstanceNorm2d(64, affine=True)
         self.conv3 = ConvLayer(64, 128, kernel_size=3, stride=2)
-        self.in3 = nn.InstanceNorm2d(128, affine=True)
+        self.instance3 = nn.InstanceNorm2d(128, affine=True)
+
         # Residual layers
         self.res1 = ResidualBlock(128)
         self.res2 = ResidualBlock(128)
         self.res3 = ResidualBlock(128)
         self.res4 = ResidualBlock(128)
         self.res5 = ResidualBlock(128)
+
         # Upsample Layers
         self.deconv1 = UpsampleConvLayer(128, 64, kernel_size=3, stride=1, upsample=2)
-        self.in4 = nn.InstanceNorm2d(64, affine=True)
+        self.instance4 = nn.InstanceNorm2d(64, affine=True)
         self.deconv2 = UpsampleConvLayer(64, 32, kernel_size=3, stride=1, upsample=2)
-        self.in5 = nn.InstanceNorm2d(32, affine=True)
+        self.instance5 = nn.InstanceNorm2d(32, affine=True)
         self.deconv3 = ConvLayer(32, 3, kernel_size=9, stride=1)
+
         # Non-linearity
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        y = self.relu(self.in1(self.conv1(x)))
-        y = self.relu(self.in2(self.conv2(y)))
-        y = self.relu(self.in3(self.conv3(y)))
-        y = self.res1(y)
-        y = self.res2(y)
-        y = self.res3(y)
-        y = self.res4(y)
-        y = self.res5(y)
-        y = self.relu(self.in4(self.deconv1(y)))
-        y = self.relu(self.in5(self.deconv2(y)))
-        y = self.deconv3(y)
-        return y
+        x = self.relu(self.instance1(self.conv1(x)))
+        x = self.relu(self.instance2(self.conv2(x)))
+        x = self.relu(self.instance3(self.conv3(x)))
+        x = self.res1(x)
+        x = self.res2(x)
+        x = self.res3(x)
+        x = self.res4(x)
+        x = self.res5(x)
+        x = self.relu(self.instance4(self.deconv1(x)))
+        x = self.relu(self.instance5(self.deconv2(x)))
+        x = self.deconv3(x)
+        return x
 
 
 class ResidualBlock(nn.Module):
@@ -93,17 +96,17 @@ class ResidualBlock(nn.Module):
     def __init__(self, num_channels):
         super(ResidualBlock, self).__init__()
         self.conv1 = ConvLayer(num_channels, num_channels, kernel_size=3, stride=1)
-        self.in1 = nn.InstanceNorm2d(num_channels, affine=True)
+        self.instance1 = nn.InstanceNorm2d(num_channels, affine=True)
         self.conv2 = ConvLayer(num_channels, num_channels, kernel_size=3, stride=1)
-        self.in2 = nn.InstanceNorm2d(num_channels, affine=True)
+        self.instance2 = nn.InstanceNorm2d(num_channels, affine=True)
         self.relu = nn.ReLU()
 
     def forward(self, x):
         residual = x
-        out = self.relu(self.in1(self.conv1(x)))
-        out = self.in2(self.conv2(out))
-        out = out + residual
-        return out
+        x = self.relu(self.instance1(self.conv1(x)))
+        x = self.instance2(self.conv2(x))
+        x += residual
+        return x
 
 
 class ConvLayer(nn.Module):
@@ -131,8 +134,10 @@ class UpsampleConvLayer(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, upsample=None):
         super(UpsampleConvLayer, self).__init__()
         self.upsample = upsample
+
         if upsample:
             self.upsample_layer = nn.Upsample(scale_factor=upsample)
+
         reflection_padding = kernel_size // 2
         self.reflection_pad = nn.ReflectionPad2d(reflection_padding)
         self.conv2d = nn.Conv2d(in_channels, out_channels, kernel_size, stride)
