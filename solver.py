@@ -267,4 +267,4 @@ class Stylizer(object):
         # save the image
         output = (output.cpu() if self.cuda else output)
         output_data = output.data[0]
-        self.save_image(self.output_image, output_data)
+        self.save_image(self.output_image + self.content_image.split('.')[0] + '-out.jpg', output_data)

@@ -15,7 +15,6 @@ def main():
     train_arg_parser.add_argument("--checkpoint-model-dir", type=str, default='./models', help="path to folder where checkpoints of trained models will be saved")
     train_arg_parser.add_argument("--image-size", type=int, default=256, help="size of training images, default is 256 X 256")
     train_arg_parser.add_argument("--style-size", type=int, default=None, help="size of style-image, default is the original size of style image")
-    train_arg_parser.add_argument("--cuda", type=int, default=1, help="set it to 1 for running on GPU, 0 for CPU")
     train_arg_parser.add_argument("--seed", type=int, default=42, help="random seed for training")
     train_arg_parser.add_argument("--content-weight", type=float, default=1e5, help="weight for content-loss, default is 1e5")
     train_arg_parser.add_argument("--style-weight", type=float, default=1e10, help="weight for style-loss, default is 1e10")
@@ -28,7 +27,6 @@ def main():
     eval_arg_parser.add_argument("--content-scale", type=float, default=None, help="factor for scaling down the content image")
     eval_arg_parser.add_argument("--output-image", type=str, default='./', help="path for saving the output image")
     eval_arg_parser.add_argument("--model", type=str, required=True, help="saved model to be used for stylizing the image")
-    eval_arg_parser.add_argument("--cuda", type=int, default=1, help="set it to 1 for running on GPU, 0 for CPU")
 
     args = main_arg_parser.parse_args()
 
