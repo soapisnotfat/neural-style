@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 from torch.optim import Adam
+from torch.backends import cudnn
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision import transforms
@@ -96,6 +97,9 @@ class Trainer(object):
         if self.cuda:
             torch.cuda.manual_seed(self.seed)
             self.transformer.cuda()
+            cudnn.benchmark = True
+            
+            self.criterion.cuda()
 
     @staticmethod
     def gram_matrix(y):
