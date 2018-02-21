@@ -12,7 +12,7 @@ from torchvision import transforms
 
 from misc import progress_bar
 from PIL import Image
-from model import TransformerNet, VGG16
+from fast_neural_style.model import TransformerNet, VGG16
 
 
 class Trainer(object):

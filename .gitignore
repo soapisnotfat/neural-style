@@ -2,6 +2,8 @@
 *.DS_Store
 */test2017/
 *.pth
+*.zip
+*VGGs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,9 +1,9 @@
 import argparse
-from solver import Trainer, Stylizer
+from fast_neural_style.solver import Trainer, Stylizer
 
 
 def main():
-    main_arg_parser = argparse.ArgumentParser(description="parser for fast-neural-style")
+    main_arg_parser = argparse.ArgumentParser(description="parser for fast_neural_style")
     subparsers = main_arg_parser.add_subparsers(title="subcommands", dest="subcommand")
 
     train_arg_parser = subparsers.add_parser("train", help="parser for training arguments")

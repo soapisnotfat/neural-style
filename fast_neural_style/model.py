@@ -29,14 +29,14 @@ class VGG16(nn.Module):
                 param.requires_grad = False
 
     def forward(self, x):
-        h = self.sequential_1(x)
-        h_relu_1_2 = h
-        h = self.sequential_2(h)
-        h_relu_2_2 = h
-        h = self.sequential_3(h)
-        h_relu_3_3 = h
-        h = self.sequential_4(h)
-        h_relu_4_3 = h
+        x = self.sequential_1(x)
+        h_relu_1_2 = x
+        x = self.sequential_2(x)
+        h_relu_2_2 = x
+        x = self.sequential_3(x)
+        h_relu_3_3 = x
+        x = self.sequential_4(x)
+        h_relu_4_3 = x
         vgg_outputs = namedtuple("VggOutputs", ['relu1_2', 'relu2_2', 'relu3_3', 'relu4_3'])
         out = vgg_outputs(h_relu_1_2, h_relu_2_2, h_relu_3_3, h_relu_4_3)
         return out
