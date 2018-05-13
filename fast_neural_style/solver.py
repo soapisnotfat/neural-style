@@ -3,7 +3,6 @@ import time
 
 import numpy as np
 import torch
-from torch.autograd import Variable
 from torch.optim import Adam
 from torch.backends import cudnn
 from torch.utils.data import DataLoader
@@ -17,6 +16,10 @@ from fast_neural_style.model import TransformerNet, VGG16
 
 class Trainer(object):
     def __init__(self, args):
+        # device configuration
+        self.cuda = torch.cuda.is_available()
+        self.device = torch.device('cuda' if self.cuda else 'cpu')
+
         # dataset
         self.train_loader = None
         self.dataset = args.dataset
@@ -42,7 +45,6 @@ class Trainer(object):
         self.style_weight = args.style_weight
 
         # general
-        self.cuda = torch.cuda.is_available()
         self.log_interval = args.log_interval
 
         # tracking
@@ -76,13 +78,9 @@ class Trainer(object):
         style = style.repeat(self.batch_size, 1, 1, 1)
 
         # set up feature extractor
-        self.vgg = VGG16(requires_grad=False)
+        self.vgg = VGG16(requires_grad=False).to(self.device)
 
-        if self.cuda:
-            self.vgg.cuda()
-            style = style.cuda()
-
-        style_v = Variable(style)
+        style_v = style.to(self.device)
         style_v = self.normalize_batch(style_v)
         features_style = self.vgg(style_v)
         self.gram_style = [self.gram_matrix(y) for y in features_style]
@@ -90,15 +88,13 @@ class Trainer(object):
     def build_model(self):
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
-        self.transformer = TransformerNet()
+        self.transformer = TransformerNet().to(self.device)
         self.optimizer = Adam(self.transformer.parameters(), self.lr)
         self.criterion = torch.nn.MSELoss()
 
         if self.cuda:
             torch.cuda.manual_seed(self.seed)
-            self.transformer.cuda()
             cudnn.benchmark = True
-            
             self.criterion.cuda()
 
     @staticmethod
@@ -121,8 +117,8 @@ class Trainer(object):
         std[:, 1, :, :] = 0.224
         std[:, 2, :, :] = 0.225
         batch = torch.div(batch, 255.0)
-        batch -= Variable(mean)
-        batch = batch / Variable(std)
+        batch -= torch.from_numpy(mean)
+        batch = batch / torch.from_numpy(std)
         return batch
 
     @staticmethod
@@ -148,7 +144,7 @@ class Trainer(object):
 
         for batch_id, (data, _) in enumerate(self.train_loader):
             # get data and target
-            data = Variable(data.cuda() if self.cuda else data)
+            data = data.to(self.device)
             target = self.transformer(data)
             data = self.normalize_batch(data)
             target = self.normalize_batch(target)
@@ -171,8 +167,8 @@ class Trainer(object):
             total_loss.backward()
             self.optimizer.step()
 
-            self.agg_content_loss += content_loss.data[0]
-            self.agg_style_loss += style_loss.data[0]
+            self.agg_content_loss += content_loss.item()
+            self.agg_style_loss += style_loss.item()
 
             progress_bar(batch_id, len(self.train_loader), "content_loss: {:.6f} | style_loss: {:.6f} | total_loss: {:.6f}".format(self.agg_content_loss / (batch_id + 1), self.agg_style_loss / (batch_id + 1), (self.agg_content_loss + self.agg_style_loss) / (batch_id + 1)))
             self.checkpoint_save(batch_id, epoch)
@@ -224,6 +220,10 @@ class Stylizer(object):
     The Stylizer that transforms content images to one in expected style
     """
     def __init__(self, args):
+        # device configuration
+        self.cuda = torch.cuda.is_available()
+        self.device = torch.device('cuda' if self.cuda else 'cpu')
+
         self.model = args.model
         self.content_image = args.content_image
         self.output_image = args.output_image
@@ -257,7 +257,8 @@ class Stylizer(object):
 
         # cast content images to Tensor
         current_content_image = (current_content_image.cuda() if self.cuda else current_content_image)
-        current_content_image = Variable(current_content_image, volatile=True)
+        with torch.no_grad():
+            current_content_image = current_content_image.to(self.device)
 
         # load transformer model
         style_model = TransformerNet()
@@ -270,5 +271,5 @@ class Stylizer(object):
 
         # save the image
         output = (output.cpu() if self.cuda else output)
-        output_data = output.data[0]
+        output_data = output.item()
         self.save_image(self.output_image + self.content_image.split('.')[0] + '-out.jpg', output_data)

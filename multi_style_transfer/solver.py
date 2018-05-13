@@ -124,8 +124,8 @@ class Trainer(object):
                 total_loss.backward()
                 optimizer.step()
 
-                agg_content_loss += content_loss.data[0]
-                agg_style_loss += style_loss.data[0]
+                agg_content_loss += content_loss.item()
+                agg_style_loss += style_loss.item()
 
                 progress_bar(num_batch, len(self.dataloader), "content: {:.6f} | style: {:.6f} | total: {:.6f}".format(
                     agg_content_loss / (num_batch + 1), agg_style_loss / (num_batch + 1),
@@ -202,7 +202,7 @@ class Optimizer(object):
 
     def save_image(self, output):
         output = add_image_net_mean_batch(output)
-        bgr_to_tensor(output.data[0], self.args.output_image, self.args.cuda)
+        bgr_to_tensor(output.item(), self.args.output_image, self.args.cuda)
 
     def get_features(self):
         features_content = self.vgg(self.content_image)
@@ -274,7 +274,7 @@ class Evaluator(object):
         style_model.setTarget(style_v)
 
         output = style_model(content_image)
-        bgr_to_tensor(output.data[0], self.args.output_image, self.args.cuda)
+        bgr_to_tensor(output.item(), self.args.output_image, self.args.cuda)
 
     def fast_evaluate(self, basedir, contents, idx=0):
         # basedir to save the data
@@ -299,7 +299,7 @@ class Evaluator(object):
                 style_model.setTarget(style_v)
                 output = style_model(content_image)
                 filename = os.path.join(basedir, "{}_{}.png".format(idx, isx + 1))
-                bgr_to_tensor(output.data[0], filename, self.args.cuda)
+                bgr_to_tensor(output.item(), filename, self.args.cuda)
                 print(filename)
 
 
