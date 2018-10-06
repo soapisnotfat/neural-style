@@ -1,6 +1,7 @@
 from collections import namedtuple
 
 import torch.nn as nn
+import torch.nn.functional as func
 from torchvision import models
 
 
@@ -136,7 +137,7 @@ class UpsampleConvLayer(nn.Module):
         self.upsample = upsample
 
         if upsample:
-            self.upsample_layer = nn.Upsample(scale_factor=upsample)
+            self.upsample_layer = func.interpolate
 
         reflection_padding = kernel_size // 2
         self.reflection_pad = nn.ReflectionPad2d(reflection_padding)
@@ -145,7 +146,7 @@ class UpsampleConvLayer(nn.Module):
     def forward(self, x):
         x_in = x
         if self.upsample:
-            x_in = self.upsample_layer(x_in)
+            x_in = self.upsample_layer(x_in, scale_factor=self.upsample)
         out = self.reflection_pad(x_in)
         out = self.conv2d(out)
         return out

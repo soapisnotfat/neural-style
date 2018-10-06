@@ -116,9 +116,9 @@ class Trainer(object):
         std[:, 0, :, :] = 0.229
         std[:, 1, :, :] = 0.224
         std[:, 2, :, :] = 0.225
-        batch = torch.div(batch, 255.0)
-        batch -= torch.from_numpy(mean)
-        batch = batch / torch.from_numpy(std)
+        batch /= 255.0
+        batch -= mean
+        batch = batch / std
         return batch
 
     @staticmethod
@@ -260,16 +260,14 @@ class Stylizer(object):
         with torch.no_grad():
             current_content_image = current_content_image.to(self.device)
 
-        # load transformer model
-        style_model = TransformerNet()
-        style_model.load_state_dict(torch.load(self.model))
-        if self.cuda:
-            style_model.cuda()
+            # load transformer model
+            style_model = TransformerNet()
+            style_model.load_state_dict(torch.load(self.model))
+            if self.cuda:
+                style_model.cuda()
 
-        # transforming
-        output = style_model(current_content_image)
+            # transforming
+            output = style_model(current_content_image)
 
-        # save the image
-        output = (output.cpu() if self.cuda else output)
-        output_data = output.item()
-        self.save_image(self.output_image + self.content_image.split('.')[0] + '-out.jpg', output_data)
+            # save the image
+            self.save_image(self.output_image + self.content_image.split('.')[0] + '-out.jpg', output.cpu()[0])
